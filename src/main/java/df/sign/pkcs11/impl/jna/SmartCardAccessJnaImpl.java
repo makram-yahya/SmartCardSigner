@@ -20,6 +20,7 @@ package df.sign.pkcs11.impl.jna;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.nio.charset.StandardCharsets;
 
 import org.pkcs11.jacknji11.C;
 import org.pkcs11.jacknji11.CE;
@@ -101,7 +102,8 @@ public class SmartCardAccessJnaImpl implements SmartCardAccessI {
                 
                 if(!(cert.getKeyUsage()[0] || cert.getKeyUsage()[1]))
                     continue;
-                CertificateData cd = new CertificateData();
+                String aliasStr = new String(id, StandardCharsets.UTF_8);
+                CertificateData cd = new CertificateData(aliasStr, cert);
                 cd.certID = id;
                 cd.certLABEL = label;
                 cd.cert = cert;
@@ -154,8 +156,8 @@ public class SmartCardAccessJnaImpl implements SmartCardAccessI {
         boolean isForSign = ckaSign[0].getValueBool();
         if(!isForSign)
             throw new Exception("The identified private key did not support supports signatures with appendix");
-        
-        byte[] signature = CE.Sign(sessionID,  new CKM(CKM.RSA_PKCS, null), privateKeyObjectIdToUse, data);
+
+        byte[] signature = CE.Sign(sessionID, new CKM(CKM.RSA_PKCS, (byte[]) null), privateKeyObjectIdToUse, data);
         return signature;
     }
     

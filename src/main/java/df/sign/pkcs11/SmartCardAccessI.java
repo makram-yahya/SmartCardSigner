@@ -28,4 +28,5 @@ public interface SmartCardAccessI {
     public byte[] signData(long sessionID, byte[] certId, byte[] certLabel, byte[] data) throws Exception, Error;
     public void closeSession(long sessionID);
     public void disconnectLibrary();
+
 }
