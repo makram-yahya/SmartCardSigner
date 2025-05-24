@@ -9,114 +9,88 @@ import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.security.PrivateKey;
+import java.security.Signature;
+import java.security.Provider;
 
 public class SmartCardAccessSunImpl implements SmartCardAccessI {
 
-    private static final String CFG_PATH = "C:/Users/mukar/OneDrive/Desktop/akis.cfg";
+    private static final String CFG_PATH = new java.io.File("config/akis.cfg").getAbsolutePath();
     private KeyStore keystore;
+    private Provider pkcs11Provider;
 
     @Override
     public long[] connectToLibrary(String library) throws Exception {
-        sun.security.pkcs11.SunPKCS11 pkcs11Provider = new sun.security.pkcs11.SunPKCS11(CFG_PATH);
+        pkcs11Provider = new sun.security.pkcs11.SunPKCS11(CFG_PATH);
         Security.addProvider(pkcs11Provider);
-
         keystore = KeyStore.getInstance("PKCS11", pkcs11Provider);
-
         return new long[]{0}; // Dummy slot ID
     }
 
     @Override
     public long getPinMinLength(long slotID) {
-        return 4; // Return a safe default or implement actual logic
+        return 4;
     }
 
     @Override
     public long getPinMaxLength(long slotID) {
-        return 8; // Return a safe default or implement actual logic
+        return 8;
     }
 
     public void init() throws Exception {
-        System.out.println("🔧 Starting SmartCardAccessSunImpl.init()...");
+        pkcs11Provider = new sun.security.pkcs11.SunPKCS11(CFG_PATH);
+        Security.addProvider(pkcs11Provider);
 
-        try {
-            // Load SunPKCS11 provider from your .cfg file
-            sun.security.pkcs11.SunPKCS11 pkcs11Provider = new sun.security.pkcs11.SunPKCS11(CFG_PATH);
-            Security.addProvider(pkcs11Provider);
-            System.out.println("📦 PKCS#11 provider added from: " + CFG_PATH);
-
-            // Prompt for PIN using Java Console
-            Console console = System.console();
-            if (console == null) {
-                System.err.println("❌ Console not available. Try running in a terminal (not inside IDE).");
-                throw new RuntimeException("Console not available. Cannot securely prompt for PIN.");
-            }
-
-            char[] pin = console.readPassword("🔐 Enter smart card PIN: ");
-            System.out.println("🔑 PIN entered.");
-
-            // Load keystore from the provider
-            KeyStore ks = KeyStore.getInstance("PKCS11", pkcs11Provider);
-            ks.load(null, pin);
-            this.keystore = ks;
-
-            System.out.println("✅ Keystore successfully loaded. Ready for use.");
-
-            // DEBUG: List aliases
-            System.out.println("🔍 Checking for aliases in the keystore...");
-            Enumeration<String> aliases = keystore.aliases();
-            if (!aliases.hasMoreElements()) {
-                System.out.println("⚠ No aliases found in keystore.");
-            } else {
-                while (aliases.hasMoreElements()) {
-                    String alias = aliases.nextElement();
-                    System.out.println("📌 Alias found: " + alias);
-                }
-            }
-
-        } catch (Exception e) {
-            System.err.println("❌ Failed to initialize smart card keystore.");
-            e.printStackTrace();
-            throw e;
+        Console console = System.console();
+        if (console == null) {
+            throw new RuntimeException("Console not available. Cannot securely prompt for PIN.");
         }
-    }
 
+        char[] pin = console.readPassword("Enter smart card PIN: ");
+        KeyStore ks = KeyStore.getInstance("PKCS11", pkcs11Provider);
+        ks.load(null, pin);
+        this.keystore = ks;
+    }
 
     @Override
     public ArrayList<CertificateData> getCertificateList(long slotID) throws Exception {
         if (keystore == null) {
-            System.out.println("⚠ Keystore is null. Calling init()...");
             init();
         } else {
-            System.out.println("✅ Keystore is already initialized. Type: " + keystore.getType());
+            try {
+                keystore.aliases();
+            } catch (java.security.KeyStoreException e) {
+                Console console = System.console();
+                char[] pin;
+
+                if (console != null) {
+                    pin = console.readPassword("Enter smart card PIN: ");
+                } else {
+                    System.out.print("Enter smart card PIN (visible): ");
+                    java.util.Scanner scanner = new java.util.Scanner(System.in);
+                    pin = scanner.nextLine().toCharArray();
+                }
+
+                keystore.load(null, pin);
+            }
         }
 
         ArrayList<CertificateData> certs = new ArrayList<>();
         Enumeration<String> aliases = keystore.aliases();
 
-        if (!aliases.hasMoreElements()) {
-            System.out.println("⚠ No aliases found in keystore.");
-        }
-
         while (aliases.hasMoreElements()) {
             String alias = aliases.nextElement();
-            System.out.println("📌 Found alias: " + alias);
 
             if (keystore.isKeyEntry(alias)) {
                 X509Certificate cert = (X509Certificate) keystore.getCertificate(alias);
                 CertificateData certData = new CertificateData(alias, cert);
                 certData.certLABEL = alias.getBytes("UTF-8");
                 certs.add(certData);
-                System.out.println("✅ Added cert: " + cert.getSubjectX500Principal());
-            } else {
-                System.out.println("⚠ Alias is not a KeyEntry: " + alias);
             }
         }
 
-        System.out.println("📤 Done. Total certs: " + certs.size());
         return certs;
     }
-
-
 
     @Override
     public long login(long slotID, String pin) throws Exception {
@@ -125,18 +99,41 @@ public class SmartCardAccessSunImpl implements SmartCardAccessI {
     }
 
     @Override
-    public byte[] signData(long sessionID, byte[] certId, byte[] certLabel, byte[] data) throws Exception {
-        // Implement actual signing logic here
-        throw new UnsupportedOperationException("signData not yet implemented");
+    public byte[] signData(long sessionID, byte[] certId, byte[] certLabel, byte[] dataToHashAndSign) throws Exception {
+        String alias = new String(certLabel, "UTF-8");
+
+        if (!keystore.containsAlias(alias)) {
+            throw new Exception("Certificate alias not found in keystore: " + alias);
+        }
+
+        PrivateKey privateKey = (PrivateKey) keystore.getKey(alias, null);
+        String keyAlg = privateKey.getAlgorithm();
+        String algorithm;
+
+        switch (keyAlg) {
+            case "RSA":
+                algorithm = "NONEwithRSA";
+                break;
+            case "EC":
+                algorithm = "NONEwithECDSA";
+                break;
+            default:
+                throw new Exception("Unsupported key algorithm: " + keyAlg);
+        }
+
+        Signature signature = Signature.getInstance(algorithm, pkcs11Provider);
+        signature.initSign(privateKey);
+        signature.update(dataToHashAndSign);
+        return signature.sign();
     }
 
     @Override
     public void closeSession(long sessionID) {
-        // Optional: cleanup if needed
+        // Cleanup if needed
     }
 
     @Override
     public void disconnectLibrary() {
-        // Optional: cleanup if needed
+        // Cleanup if needed
     }
 }

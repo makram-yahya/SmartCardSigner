@@ -43,13 +43,20 @@ import df.sign.utils.X509Utils;
 @SuppressWarnings("restriction")
 public class SignUtils {
     
-    public static final String[] standardDllList = new String[]{"incryptoki2.dll", "bit4ipki.dll", "bit4opki.dll", "bit4xpki.dll", "OCSCryptoki.dll", "asepkcs.dll", "SI_PKCS11.dll", "cmP11.dll", "cmP11_M4.dll", "IpmPki32.dll", "IPMpkiLC.dll", "IpmPkiLU.dll", "bit4cpki.dll", "bit4p11.dll", "asepkcs.dll", "PKCS11.dll", "eTPKCS11.dll", "SSC_PKCS11.dll", "inp11lib.dll", "opensc-pkcs11.dll", "libbit4opki.so", "libbit4spki.so", "libbit4p11.so", "libbit4ipki.so", "opensc-pkcs11.so", "libeTPkcs11.so", "libopensc.dylib", "libbit4xpki.dylib", "libbit4ipki.dylib", "libbit4opki.dylib", "libASEP11.dylib", "libeTPkcs11.dylib","akisp11.dll", "C:\\\\Windows\\\\System32\\\\akisp11.dll"};
+    public static final String[] standardDllList = new String[]{"incryptoki2.dll", "bit4ipki.dll", "bit4opki.dll", "bit4xpki.dll", "OCSCryptoki.dll", "asepkcs.dll", "SI_PKCS11.dll", "cmP11.dll", "cmP11_M4.dll", "IpmPki32.dll", "IPMpkiLC.dll", "IpmPkiLU.dll", "bit4cpki.dll", "bit4p11.dll", "asepkcs.dll", "PKCS11.dll", "eTPKCS11.dll", "SSC_PKCS11.dll", "inp11lib.dll", "opensc-pkcs11.dll", "libbit4opki.so", "libbit4spki.so", "libbit4p11.so", "libbit4ipki.so", "opensc-pkcs11.so", "libeTPkcs11.so", "libopensc.dylib", "libbit4xpki.dylib", "libbit4ipki.dylib", "libbit4opki.dylib", "libASEP11.dylib", "libeTPkcs11.dylib","akisp11.dll"};
     private static ArrayList<String[]> mapCardInfoList = new ArrayList<String[]>();
     public static final String logFilePath = System.getProperty("java.io.tmpdir")+"websocket_smartcard_signer.log";
     
     static {
         mapCardInfoList.add(new String[]{"Carta Raffaello 111", "bit4ipki.dll%incryptoki2.dll%libbit4ipki.so%libbit4ipki.dylib", "3BFF1800FF8131FE55006B02090200011101434E531131808E", "http://www.cartaraffaello.it/AreaDownload/tabid/80/language/it-IT/Default.aspx"});
         mapCardInfoList.add(new String[]{"Carta Raffaello 611", "bit4opki.dll%libbit4opki.so%libbit4opki.dylib", "3BFF1800008131FE45006B04050100012101434E5310318059", "http://www.cartaraffaello.it/AreaDownload/tabid/80/language/it-IT/Default.aspx"});
+        mapCardInfoList.add(new String[]{
+                "KAMU MS TUBITAK",
+                "akisp11.dll",
+                "3B9F968131FE45806755454B41451292318073B3A1806A",
+                "https://example.com/your-driver-download"
+        });
+
     }
     
     public static void initLog() throws Exception {
@@ -269,4 +276,5 @@ public class SignUtils {
         TimeInfo response = client.getTime(InetAddress.getByName("pool.ntp.org"));
         return new Date(response.getReturnTime());
     }
+
 }

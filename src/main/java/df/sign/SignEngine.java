@@ -224,17 +224,28 @@ public class SignEngine {
             }catch(Exception ex){
                 //ex.printStackTrace();
                 smartCardAccessManager.disconnectLibrary();
-                System.err.println(ex.getMessage());
+//                System.err.println(ex.getMessage());
+                ex.printStackTrace(); // <-- This shows us what's going wrong
+
                 continue;
             }
             
             for(long slot : slotList){
                 ArrayList<CertificateData> certInSlotList = null;
                 try{
+                    System.out.println("🟡 Trying to load certificates from slot: " + slot + " using DLL: " + dllFullPath);
                     certInSlotList = smartCardAccessManager.getCertificateList(slot);
+                    System.out.println("🟡 Trying to load certificates from slot: " + slot + " using DLL: " + dllFullPath);
+                    if (certInSlotList == null || certInSlotList.isEmpty()) {
+                        System.out.println("⚠️ No certificates found in slot: " + slot);
+                    } else {
+                        System.out.println("✅ Certificates found: " + certInSlotList.size());
+                    }
+
                 }catch(Exception ex){
                     //ex.printStackTrace();
-                    System.err.println(ex.getMessage());
+//                    System.err.println(ex.getMessage());
+                    ex.printStackTrace(); // <-- This shows us what's going wrong
                     continue;
                 }
                 
