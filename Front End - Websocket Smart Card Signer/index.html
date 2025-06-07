@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>CAdES Signature Demo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h2>PDF Signing Demo (CAdES BES)</h2>
+  <div class="container">
+    <input type="file" id="pdfFile" accept="application/pdf" />
+    <button onclick="signPdf()">Sign PDF</button>
+    <p id="status"></p>
+
+    <div class="progress-container" id="progressContainer">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+
+    <a id="downloadLink" style="display:none;">Download Signed File</a>
+    <button id="copyBtn" style="display:none;" onclick="copySignature()">Copy Signature</button>
+
+    <textarea id="signatureBox" readonly></textarea>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
