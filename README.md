@@ -19,7 +19,7 @@
 ## Technologies Used
 
 - **Java** (Backend)
-- **Gradle** (Build tool)
+- **Maven** (Build tool)
 - **JavaScript, HTML, CSS** (Frontend)
 - **WebSocket** (Real-time communication)
 
